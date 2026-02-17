@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+
+# Database
+*.db
+*.db-wal
+*.db-shm
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.sw?
+
+# Node
+node_modules/
+dist/
+
+# Claude
+.claude/
