@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Clock, Sliders, Settings2, Shield, User } from 'lucide-react';
+import { LayoutDashboard, Clock, Sliders, Settings2, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Button from '../ui/Button';
 
@@ -7,7 +7,6 @@ const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'My Runs', path: '/runs', icon: Clock },
   { name: 'Configurations', path: '/configs', icon: Sliders },
-  { name: 'Audit Log', path: '/audit-log', icon: Shield },
   { name: 'Preferences', path: '/preferences', icon: Settings2 },
 ];
 

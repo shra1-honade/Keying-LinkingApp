@@ -8,9 +8,11 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table';
-import { Settings, Pencil, Trash2, ArrowUpDown, Search } from 'lucide-react';
+import { Settings, Pencil, Trash2, ArrowUpDown, Search, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfigs, useDeleteConfig, useUpdateConfig } from '../hooks/useConfigs';
+import { useCreateRun } from '../hooks/useRuns';
+import { useTableColumns } from '../hooks/useDatasource';
 import { formatDate } from '../lib/utils';
 import type { Config } from '../types';
 import Card from '../components/ui/Card';
@@ -27,12 +29,16 @@ export default function Configs() {
   const { data: configs, isLoading } = useConfigs();
   const deleteConfig = useDeleteConfig();
   const updateConfig = useUpdateConfig();
+  const createRun = useCreateRun();
 
   const [sorting, setSorting] = useState<SortingState>([{ id: 'created_at', desc: true }]);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingConfig, setEditingConfig] = useState<Config | null>(null);
   const [editName, setEditName] = useState('');
   const [editSourceTable, setEditSourceTable] = useState('');
+  const [editColumnMapping, setEditColumnMapping] = useState<Record<string, string>>({});
+
+  const { data: sourceColumns } = useTableColumns(editSourceTable || undefined, editingConfig?.source_type || 'sqlite');
 
   const filteredConfigs = useMemo(() => {
     if (!configs) return [];
@@ -47,12 +53,13 @@ export default function Configs() {
     setEditingConfig(config);
     setEditName(config.name);
     setEditSourceTable(config.source_table);
+    setEditColumnMapping({ ...config.column_mapping });
   };
 
   const handleSaveEdit = () => {
     if (!editingConfig) return;
     updateConfig.mutate(
-      { configId: editingConfig.config_id, payload: { name: editName, source_table: editSourceTable } },
+      { configId: editingConfig.config_id, payload: { name: editName, source_table: editSourceTable, column_mapping: editColumnMapping } },
       {
         onSuccess: () => {
           toast.success('Configuration updated');
@@ -69,6 +76,19 @@ export default function Configs() {
       onSuccess: () => toast.success('Configuration deleted'),
       onError: () => toast.error('Failed to delete configuration'),
     });
+  };
+
+  const handleRerun = (config: Config) => {
+    createRun.mutate(
+      { config_id: config.config_id },
+      {
+        onSuccess: () => {
+          toast.success(`Run started for "${config.name}"`);
+          navigate('/runs');
+        },
+        onError: () => toast.error('Failed to start run'),
+      }
+    );
   };
 
   const columns = useMemo(
@@ -111,6 +131,13 @@ export default function Configs() {
         header: '',
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleRerun(row.original); }}
+              className="p-1.5 text-efx-gray-400 hover:text-green-600 rounded hover:bg-green-50 transition-colors"
+              title="Re-run"
+            >
+              <Play className="h-4 w-4" />
+            </button>
             <button
               onClick={(e) => { e.stopPropagation(); handleEdit(row.original); }}
               className="p-1.5 text-efx-gray-400 hover:text-efx-red rounded hover:bg-efx-gray-100 transition-colors"
@@ -282,11 +309,25 @@ export default function Configs() {
               <label className="block text-sm font-medium text-efx-gray-700 mb-2">
                 Column Mapping
               </label>
-              <div className="bg-efx-gray-50 rounded-lg p-4 space-y-2">
-                {Object.entries(editingConfig.column_mapping).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between text-sm">
-                    <span className="text-efx-gray-600">{key}</span>
-                    <span className="font-mono text-efx-gray-900">{value}</span>
+              <div className="space-y-3">
+                {Object.entries(editColumnMapping).map(([key, value]) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <label className="text-sm text-efx-gray-600 w-32 shrink-0">{key}</label>
+                    <select
+                      value={value}
+                      onChange={(e) =>
+                        setEditColumnMapping((prev) => ({ ...prev, [key]: e.target.value }))
+                      }
+                      className="flex-1 px-3 py-1.5 border border-efx-gray-200 rounded-md text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-efx-red focus:border-transparent"
+                    >
+                      <option value="">— Select column —</option>
+                      {sourceColumns?.map((col) => (
+                        <option key={col} value={col}>{col}</option>
+                      ))}
+                      {value && sourceColumns && !sourceColumns.includes(value) && (
+                        <option value={value}>{value} (not found)</option>
+                      )}
+                    </select>
                   </div>
                 ))}
               </div>

@@ -6,7 +6,6 @@ import NewRun from './pages/NewRun';
 import Analysis from './pages/Analysis';
 import Configs from './pages/Configs';
 import Preferences from './pages/Preferences';
-import AuditLog from './pages/AuditLog';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -21,7 +20,6 @@ function App() {
           <Route path="runs/:runId/analysis" element={<Analysis />} />
           <Route path="configs" element={<Configs />} />
           <Route path="preferences" element={<Preferences />} />
-          <Route path="audit-log" element={<AuditLog />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
