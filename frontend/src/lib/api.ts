@@ -132,6 +132,14 @@ export const preferencesApi = {
     const { data } = await api.put<UserPreferences>(`/api/v1/preferences/${orgId}`, payload);
     return data;
   },
+
+  sendTestEmail: async (orgId: string = 'demo_org', email: string): Promise<{ success: boolean; message: string }> => {
+    const { data } = await api.post<{ success: boolean; message: string }>(
+      `/api/v1/preferences/${orgId}/test-email`,
+      { email }
+    );
+    return data;
+  },
 };
 
 // Audit Logs API

@@ -6,9 +6,54 @@ from app.database import SessionLocal
 from app.models.run import Run
 from app.models.config import Config
 from app.models.match_result import MatchResult
+from app.models.user_preferences import UserPreferences
 from app.adapters.sqlite_adapter import SQLiteAdapter
 from app.services.matching_engine import MatchingEngine
 from app.services.audit_service import log_event
+from app.services.email_service import send_email, is_configured as email_configured
+from app.services.email_templates import run_completed_email, run_error_email
+
+
+def _send_run_notification(db, org_id: str, run, status: str):
+    """Send email notification for run completion/error if user has opted in."""
+    try:
+        if not email_configured():
+            return
+
+        prefs = db.query(UserPreferences).filter(
+            UserPreferences.org_id == org_id
+        ).first()
+
+        if not prefs or not prefs.email_notifications or not prefs.notification_email:
+            return
+
+        if status == "completed" and not prefs.notify_on_completion:
+            return
+        if status == "error" and not prefs.notify_on_error:
+            return
+
+        if status == "completed":
+            subject = f"BizMatch - Run Completed ({run.match_rate}% match rate)"
+            html_body = run_completed_email(run)
+        else:
+            subject = "BizMatch - Run Failed"
+            html_body = run_error_email(run)
+
+        send_email(
+            to_email=prefs.notification_email,
+            subject=subject,
+            html_body=html_body,
+        )
+
+        log_event(db, org_id, "notification_sent", run_id=run.run_id, payload={
+            "type": status,
+            "email": prefs.notification_email,
+        })
+        db.commit()
+
+    except Exception as e:
+        # Never let notification failure break the run
+        print(f"[WARN] Failed to send notification: {e}")
 
 
 def run_matching_job(run_id: str, config_id: str, org_id: str):
@@ -119,6 +164,8 @@ def run_matching_job(run_id: str, config_id: str, org_id: str):
             })
             db.commit()
 
+            _send_run_notification(db, org_id, run, "completed")
+
         except Exception as e:
             db.rollback()
             try:
@@ -127,6 +174,7 @@ def run_matching_job(run_id: str, config_id: str, org_id: str):
                     run.status = "error"
                     run.error_message = str(e)[:500]
                     db.commit()
+                    _send_run_notification(db, org_id, run, "error")
             except Exception:
                 pass
         finally:

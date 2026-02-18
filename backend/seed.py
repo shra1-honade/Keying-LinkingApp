@@ -356,6 +356,7 @@ def seed_preferences(db):
         email_notifications=True,
         notify_on_completion=True,
         notify_on_error=True,
+        notification_email=None,
         retention_days=90,
         auto_archive=False,
         default_page_size=25,
@@ -391,8 +392,8 @@ def main():
         ref_sample = db.query(ReferenceBusiness).limit(1000).all()
         seed_customer_businesses(db, ref_sample)
 
-        config_ids = seed_configs(db, count=10)
-        seed_runs_and_results(db, config_ids, runs_per_config=2)
+        seed_configs(db, count=0)  # No demo configs — fresh slate
+        # No demo runs or match results
         seed_preferences(db)
 
         # Print summary

@@ -10,6 +10,7 @@ class UserPreferences(Base):
     email_notifications = Column(Boolean, default=True)
     notify_on_completion = Column(Boolean, default=True)
     notify_on_error = Column(Boolean, default=True)
+    notification_email = Column(String(255), nullable=True, default=None)
     retention_days = Column(Integer, default=90)
     auto_archive = Column(Boolean, default=False)
     default_page_size = Column(Integer, default=25)

@@ -101,6 +101,7 @@ export interface UserPreferences {
   email_notifications: boolean;
   notify_on_completion: boolean;
   notify_on_error: boolean;
+  notification_email: string | null;
   retention_days: number;
   auto_archive: boolean;
   default_page_size: number;
@@ -110,6 +111,7 @@ export interface UpdatePreferencesPayload {
   email_notifications?: boolean;
   notify_on_completion?: boolean;
   notify_on_error?: boolean;
+  notification_email?: string | null;
   retention_days?: number;
   auto_archive?: boolean;
   default_page_size?: number;
